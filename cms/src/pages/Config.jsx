@@ -53,12 +53,28 @@ function ColumnsTab({ pid }) {
   const [msg, setMsg] = useState('');
   useEffect(() => { api.getColumns(pid).then(setCols); }, [pid]);
 
-  const add = () => {
+  const add = async () => {
     if (cols.length >= 10) return setMsg('Maksimum 10 kolom');
+    try {
+      const data = await api.getParticipants(pid, 1, 1);
+      const logicData = await api.getLogics(pid);
+      if (data.total > 0 || logicData.length > 0) {
+        return setMsg('Hapus data peserta dan logic terlebih dahulu sebelum menambah kolom.');
+      }
+    } catch (e) { /* proceed if can't check */ }
     setCols([...cols, { id: Date.now(), name: '', show_on_web: false, masking_6digit: false, _new: true }]);
   };
   const remove = async (c) => {
-    if (!c._new) { try { await api.deleteColumn(pid, c.id); } catch (e) { return setMsg(e.message); } }
+    if (!c._new) {
+      try {
+        const data = await api.getParticipants(pid, 1, 1);
+        const logicData = await api.getLogics(pid);
+        if (data.total > 0 || logicData.length > 0) {
+          return setMsg('Hapus data peserta dan logic terlebih dahulu sebelum menghapus kolom.');
+        }
+        await api.deleteColumn(pid, c.id);
+      } catch (e) { return setMsg(e.message); }
+    }
     setCols(cols.filter(x => x.id !== c.id));
   };
   const save = async () => {
