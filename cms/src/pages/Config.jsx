@@ -531,13 +531,13 @@ function LogicTab({ pid }) {
                     <div style={{ background: '#fafbfc', border: '1px solid #eee', borderRadius: 8, padding: 14, marginTop: 8 }}>
                       <p style={{ fontWeight: 600, fontSize: 12, color: '#555', marginBottom: 8 }}>Filter Kategorikal <span style={{ color: '#e74c3c' }}>*</span></p>
                       <div className="form-group"><label>Kolom Filter</label><select value={form.filter_cat_col} onChange={e => setForm({ ...form, filter_cat_col: e.target.value, filter_cat_vals: [] })}><option value="">-- Pilih Kolom --</option>{cols.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}</select></div>
-                      <div className="form-group"><label>Pilih Nilai</label><input value={form._catValInput || ''} onChange={e => setForm({ ...form, _catValInput: e.target.value })} placeholder="Ketik nilai, Enter untuk tambah" onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); const v = form._catValInput?.trim(); if (v && !(form.filter_cat_vals || []).includes(v)) { setForm({ ...form, filter_cat_vals: [...(form.filter_cat_vals || []), v], _catValInput: '' }); } } }} />
+                      <div className="form-group"><label>Pilih Nilai</label><div className="flex gap-8"><input value={form._catValInput || ''} onChange={e => setForm({ ...form, _catValInput: e.target.value })} placeholder="Ketik nilai..." style={{ flex: 1 }} /><button type="button" className="btn btn-sm btn-primary" onClick={() => { const v = (form._catValInput || '').trim(); if (v && !(form.filter_cat_vals || []).includes(v)) setForm({ ...form, filter_cat_vals: [...(form.filter_cat_vals || []), v], _catValInput: '' }); }}>+</button></div></div>
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 6 }}>
                         {(form.filter_cat_vals || []).map(v => (
                           <span key={v} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: '#e8f8f0', color: '#1a7a4c', padding: '4px 10px', borderRadius: 20, fontSize: 12 }}>{v} <button onClick={() => setForm({ ...form, filter_cat_vals: form.filter_cat_vals.filter(x => x !== v) })} style={{ background: 'none', border: 'none', color: '#e74c3c', cursor: 'pointer', fontSize: 14, padding: 0, lineHeight: 1 }}>&times;</button></span>
                         ))}
                       </div>
-                      <div style={{ borderTop: '1px solid #eee', margin: '12px 0' }} />
+                      <div style={{ borderTop: '1px solid #eee', margin: '12px 0' }}></div>
                       <p style={{ fontWeight: 600, fontSize: 12, color: '#555', marginBottom: 8 }}>Filter Nominal <span style={{ fontWeight: 400, color: '#999' }}>(Opsional)</span></p>
                       <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, cursor: 'pointer', marginBottom: 12 }}><input type="checkbox" checked={form.filter_nominal_enabled} onChange={e => setForm({ ...form, filter_nominal_enabled: e.target.checked })} /> Aktifkan filter nominal</label>
                       {form.filter_nominal_enabled && (
