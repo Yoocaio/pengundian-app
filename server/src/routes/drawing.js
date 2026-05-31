@@ -106,20 +106,28 @@ router.delete('/:pid/winners/:wid', async (req, res) => {
   res.json({ message: 'OK' });
 });
 
-// POST save winners to CMS
+// POST save winners to CMS — only save latest batch
 router.post('/:pid/winners/save', async (req, res) => {
   const { file_name } = req.body;
   if (!file_name) return res.status(400).json({ error: 'Nama file wajib diisi' });
-  const { rows: winners } = await req.app.locals.pool.query(
-    'SELECT * FROM winners WHERE project_id=$1 ORDER BY drawn_at',
+  // Get latest batch
+  const { rows: batches } = await req.app.locals.pool.query(
+    'SELECT DISTINCT batch_id FROM winners WHERE project_id=$1 ORDER BY batch_id DESC LIMIT 1',
     [req.params.pid]
+  );
+  if (batches.length === 0) return res.status(400).json({ error: 'Belum ada pemenang' });
+  const latestBatch = batches[0].batch_id;
+  const { rows: winners } = await req.app.locals.pool.query(
+    'SELECT * FROM winners WHERE project_id=$1 AND batch_id=$2 ORDER BY drawn_at',
+    [req.params.pid, latestBatch]
   );
   if (winners.length === 0) return res.status(400).json({ error: 'Belum ada pemenang' });
   await req.app.locals.pool.query(
     'INSERT INTO saved_results (project_id, file_name, data, created_by) VALUES ($1,$2,$3,$4)',
-    [req.params.pid, file_name, JSON.stringify(winners), 1] // default admin user
+    [req.params.pid, file_name, JSON.stringify(winners), 1]
   );
-  await req.app.locals.pool.query('DELETE FROM winners WHERE project_id=$1', [req.params.pid]);
+  // Only delete the saved batch, not all winners
+  await req.app.locals.pool.query('DELETE FROM winners WHERE project_id=$1 AND batch_id=$2', [req.params.pid, latestBatch]);
   res.json({ message: 'Data berhasil disimpan ke CMS' });
 });
 
