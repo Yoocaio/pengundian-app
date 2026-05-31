@@ -62,24 +62,32 @@ router.post('/:pid/draw/:logicId', async (req, res) => {
       }
     }
 
-    // Shuffle & pick winners
+    // Shuffle pool
     for (let i = pool.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [pool[i], pool[j]] = [pool[j], pool[i]]; }
-    const winners = pool.slice(0, logic.qty);
 
-    // Save winners
+    const rounds = logic.auto_rounds || 1;
+    const perRound = Math.ceil(logic.qty / rounds);
+    const totalWinners = Math.min(logic.qty, pool.length);
+
+    // Pick all winners at once
+    const allWinners = pool.slice(0, totalWinners);
+
+    // Save winners with batch
     const batchId = Date.now().toString();
     const prize = await req.app.locals.pool.query('SELECT * FROM prizes WHERE id=$1', [logic.target_id]);
     const prizeName = prize.rows[0]?.name || logic.target_name;
     const prizeCat = prize.rows[0]?.category || '';
 
-    for (const w of winners) {
+    for (const w of allWinners) {
       await req.app.locals.pool.query(
         'INSERT INTO winners (project_id, logic_id, prize_name, prize_category, participant_data, batch_id) VALUES ($1,$2,$3,$4,$5,$6)',
         [req.params.pid, logic.id, prizeName, prizeCat, JSON.stringify(w), batchId]
       );
     }
 
-    res.json({ winners, batchId });
+    // Return only first round's winners + round info
+    const firstRound = allWinners.slice(0, perRound);
+    res.json({ winners: firstRound, batchId, rounds: rounds, perRound: perRound, totalWinners: totalWinners });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
