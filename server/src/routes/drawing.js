@@ -3,21 +3,31 @@ const { authMiddleware } = require('../middleware/auth');
 const router = express.Router();
 
 // Public: get drawing data for landing page
-router.get('/:pid/data', async (req, res) => {
+router.get('/:urlPath/data', async (req, res) => {
   try {
+    // Lookup project by url_path OR numeric id
+    const isNumeric = /^\d+$/.test(req.params.urlPath);
+    const projectQuery = isNumeric
+      ? 'SELECT id FROM projects WHERE id=$1 AND status=$2'
+      : 'SELECT id FROM projects WHERE url_path=$1 AND status=$2';
+    const { rows: [project] } = await req.app.locals.pool.query(projectQuery, [req.params.urlPath, 'active']);
+    if (!project) return res.status(404).json({ error: 'Proyek tidak ditemukan' });
+    const pid = project.id;
+
     const [cols, prizes, logics, landing, participants] = await Promise.all([
-      req.app.locals.pool.query('SELECT * FROM data_columns WHERE project_id=$1 ORDER BY sort_order', [req.params.pid]),
-      req.app.locals.pool.query('SELECT * FROM prizes WHERE project_id=$1 ORDER BY sort_order', [req.params.pid]),
-      req.app.locals.pool.query('SELECT * FROM logics WHERE project_id=$1 ORDER BY sort_order', [req.params.pid]),
-      req.app.locals.pool.query('SELECT * FROM landing_config WHERE project_id=$1', [req.params.pid]),
-      req.app.locals.pool.query('SELECT data FROM participants WHERE project_id=$1', [req.params.pid])
+      req.app.locals.pool.query('SELECT * FROM data_columns WHERE project_id=$1 ORDER BY sort_order', [pid]),
+      req.app.locals.pool.query('SELECT * FROM prizes WHERE project_id=$1 ORDER BY sort_order', [pid]),
+      req.app.locals.pool.query('SELECT * FROM logics WHERE project_id=$1 ORDER BY sort_order', [pid]),
+      req.app.locals.pool.query('SELECT * FROM landing_config WHERE project_id=$1', [pid]),
+      req.app.locals.pool.query('SELECT data FROM participants WHERE project_id=$1', [pid])
     ]);
     res.json({
+      project_id: pid,
       columns: cols.rows,
       prizes: prizes.rows,
       logics: logics.rows.map(l => ({ ...l, tiered: typeof l.tiered === 'string' ? JSON.parse(l.tiered) : l.tiered, filter_cat_vals: typeof l.filter_cat_vals === 'string' ? JSON.parse(l.filter_cat_vals) : l.filter_cat_vals })),
       landingConfig: landing.rows[0] || {},
-      participants: participants.rows.map(r => r.data)
+      participants: participants.rows.map(r => (typeof r.data === 'string' ? JSON.parse(r.data) : r.data))
     });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
