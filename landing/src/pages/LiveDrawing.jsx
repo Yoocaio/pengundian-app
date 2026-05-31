@@ -42,8 +42,16 @@ export default function LiveDrawing() {
     );
   };
 
+  const totalWonForPrize = (prize) => {
+    let count = 0;
+    upperWinners.forEach(w => { if (w._prizeId === prize.id) count++; });
+    lowerWinners.forEach(w => { if (w._prizeId === prize.id) count++; });
+    return count;
+  };
+
   const startDraw = useCallback(() => {
     if (!selectedPrize) return setError('Pilih hadiah terlebih dahulu');
+    if (totalWonForPrize(selectedPrize) >= selectedPrize.qty) return setError('Kuota hadiah \"' + selectedPrize.name + '\" sudah habis. Pilih hadiah lain.');
     setError('');
     setIsDrawing(true);
 
@@ -136,12 +144,16 @@ export default function LiveDrawing() {
         <div style={{ textAlign: 'center', marginBottom: 20 }}>
           <div style={{ fontSize: 13, fontWeight: 600, opacity: 0.7, marginBottom: 10 }}>PILIH HADIAH</div>
           <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
-            {data.prizes?.map(p => (
-              <button key={p.id} onClick={() => !isDrawing && setSelectedPrize(p)} style={{ padding: '10px 16px', borderRadius: 10, border: selectedPrize?.id === p.id ? '2px solid #ffd700' : '1px solid rgba(255,255,255,0.2)', background: selectedPrize?.id === p.id ? 'rgba(255,215,0,0.15)' : 'rgba(255,255,255,0.06)', color: 'inherit', cursor: 'pointer', fontSize: 13, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 8, minWidth: 140 }} disabled={isDrawing}>
-                {p.image_url ? <img src={p.image_url} alt="" style={{ width: 36, height: 36, objectFit: 'cover', borderRadius: 6 }} /> : <div style={{ width: 36, height: 36, borderRadius: 6, background: 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>&#127873;</div>}
-                <div><div style={{ fontSize: 12 }}>{p.name}</div><div style={{ fontSize: 10, opacity: 0.5 }}>{p.category} &middot; {p.qty}</div></div>
+            {data.prizes?.map(p => {
+              const won = totalWonForPrize(p);
+              const exhausted = won >= p.qty;
+              const remaining = p.qty - won;
+              return (
+              <button key={p.id} onClick={() => !isDrawing && !exhausted && setSelectedPrize(p)} style={{ padding: '10px 16px', borderRadius: 10, border: selectedPrize?.id === p.id ? '2px solid #ffd700' : '1px solid rgba(255,255,255,0.2)', background: selectedPrize?.id === p.id ? 'rgba(255,215,0,0.15)' : 'rgba(255,255,255,0.06)', color: 'inherit', cursor: exhausted ? 'not-allowed' : 'pointer', fontSize: 13, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 8, minWidth: 140, opacity: exhausted ? 0.35 : 1 }} disabled={isDrawing || exhausted}>
+                {p.image_url ? <img src={p.image_url} alt="" style={{ width: 36, height: 36, objectFit: 'cover', borderRadius: 6, opacity: exhausted ? 0.5 : 1 }} /> : <div style={{ width: 36, height: 36, borderRadius: 6, background: 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>&#127873;</div>}
+                <div><div style={{ fontSize: 12 }}>{p.name}</div><div style={{ fontSize: 10, opacity: 0.7 }}>{p.category} &middot; {exhausted ? <span style={{ color: '#e74c3c' }}>Habis ({p.qty}/{p.qty})</span> : won > 0 ? <span style={{ color: '#ffd700' }}>Tersisa {remaining}/{p.qty}</span> : 'Qty: ' + p.qty}</div></div>
               </button>
-            ))}
+            )})}
           </div>
         </div>
 
