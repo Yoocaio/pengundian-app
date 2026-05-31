@@ -120,11 +120,9 @@ export default function LiveDrawing() {
 
   const saveToCms = async () => {
     if (!fileName.trim()) return setError('Nama file wajib diisi');
-    const token = localStorage.getItem('token');
-    if (!token) return setError('Login terlebih dahulu untuk menyimpan');
     try {
       await fetch(`${API}/drawing/${data.project_id}/winners/save`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ file_name: fileName })
       });
       setLowerWinners([]);

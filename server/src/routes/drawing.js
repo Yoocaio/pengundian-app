@@ -107,7 +107,7 @@ router.delete('/:pid/winners/:wid', async (req, res) => {
 });
 
 // POST save winners to CMS
-router.post('/:pid/winners/save', authMiddleware, async (req, res) => {
+router.post('/:pid/winners/save', async (req, res) => {
   const { file_name } = req.body;
   if (!file_name) return res.status(400).json({ error: 'Nama file wajib diisi' });
   const { rows: winners } = await req.app.locals.pool.query(
