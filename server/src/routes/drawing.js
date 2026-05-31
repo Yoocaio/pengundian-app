@@ -117,7 +117,7 @@ router.post('/:pid/winners/save', async (req, res) => {
   if (winners.length === 0) return res.status(400).json({ error: 'Belum ada pemenang' });
   await req.app.locals.pool.query(
     'INSERT INTO saved_results (project_id, file_name, data, created_by) VALUES ($1,$2,$3,$4)',
-    [req.params.pid, file_name, JSON.stringify(winners), req.user.id]
+    [req.params.pid, file_name, JSON.stringify(winners), 1] // default admin user
   );
   await req.app.locals.pool.query('DELETE FROM winners WHERE project_id=$1', [req.params.pid]);
   res.json({ message: 'Data berhasil disimpan ke CMS' });
