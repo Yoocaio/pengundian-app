@@ -43,7 +43,7 @@ export default function Config() {
       {tab === 2 && <PrizesTab pid={id} />}
       {tab === 3 && <ParticipantsTab pid={id} />}
       {tab === 4 && <LogicTab pid={id} />}
-      {tab === 5 && <LandingTab pid={id} />}
+      {tab === 5 && <LandingTab pid={id} project={project} />}
     </div>
   );
 }
@@ -578,7 +578,7 @@ function LogicTab({ pid }) {
   );
 }
 
-function LandingTab({ pid }) {
+function LandingTab({ pid, project }) {
   const [cfg, setCfg] = useState({ title: 'LIVE DRAWING', subtitle: '', bg_color: '#1a1a2e', text_color: '#ffffff', draw_by_column: '', show_prizes: true, banner_fit: 'cover' });
   const [cols, setCols] = useState([]);
   const [msg, setMsg] = useState('');
@@ -602,7 +602,7 @@ function LandingTab({ pid }) {
     <div>
       <div className="flex-between mb-16">
         <p className="text-muted">Atur tampilan landing page.</p>
-        <button className="btn btn-success btn-sm" onClick={() => window.open(`https://pengundian-app-udrl.vercel.app/landing/${project.url_path}`, '_blank')}>Preview Live</button>
+        <button className="btn btn-success btn-sm" onClick={() => window.open(`https://pengundian-app-udrl.vercel.app/landing/${project?.url_path || pid}`, '_blank')}>Preview Live</button>
       </div>
       {msg && <div className={`alert ${msg.includes('Berhasil') ? 'alert-success' : 'alert-error'}`}>{msg}</div>}
       <div className="card">

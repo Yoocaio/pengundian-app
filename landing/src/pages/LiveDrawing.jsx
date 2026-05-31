@@ -56,7 +56,15 @@ export default function LiveDrawing() {
     setIsDrawing(true);
 
     const pool = (data?.participants || []).map(p => (typeof p === 'string' ? JSON.parse(p) : p));
-    const drawCol = data?.landingConfig?.draw_by_column || 'No. Undian';
+    // Find the actual column key (case-insensitive match)
+    const drawColCfg = data?.landingConfig?.draw_by_column || 'No. Undian';
+    let drawCol = drawColCfg;
+    if (pool.length > 0) {
+      const keys = Object.keys(pool[0]);
+      const match = keys.find(k => k.toLowerCase() === drawColCfg.toLowerCase());
+      if (match) drawCol = match;
+      else if (keys.length > 0) drawCol = keys[0]; // fallback to first column
+    }
     const logic = findLogic(selectedPrize);
 
     let idx = 0;
@@ -66,6 +74,8 @@ export default function LiveDrawing() {
         setDisplayVal(p[drawCol] || '--------');
         setDisplayMeta(p);
         idx++;
+      } else {
+        setDisplayVal('--------');
       }
     }, 70);
 
