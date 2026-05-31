@@ -469,9 +469,26 @@ function LogicTab({ pid }) {
                 </div>
               </div>
               {form.draw_method === 'auto' && (
-                <div className="flex gap-16">
-                  <div className="form-group"><label>Durasi (detik)</label><input type="number" value={form.stop_after_seconds} onChange={e => setForm({ ...form, stop_after_seconds: parseInt(e.target.value) || 10 })} /></div>
-                  <div className="form-group"><label>Jumlah Kali Undi</label><input type="number" value={form.auto_rounds} onChange={e => setForm({ ...form, auto_rounds: parseInt(e.target.value) || 1 })} /></div>
+                <div>
+                  <div className="flex gap-16">
+                    <div className="form-group"><label>Durasi (detik)</label><input type="number" value={form.stop_after_seconds} onChange={e => setForm({ ...form, stop_after_seconds: parseInt(e.target.value) || 10 })} /></div>
+                    <div className="form-group"><label>Jumlah Kali Undi</label><input type="number" min="1" value={form.auto_rounds} onChange={e => setForm({ ...form, auto_rounds: parseInt(e.target.value) || 1 })} /></div>
+                  </div>
+                  {form.auto_rounds > 1 && form.qty > 0 && (
+                    <div style={{ background: '#f9fdf9', border: '1px solid #d4edda', borderRadius: 8, padding: 12, marginTop: 8 }}>
+                      <div style={{ fontWeight: 600, fontSize: 12, color: '#666', marginBottom: 6 }}>Preview Pembagian Pemenang:</div>
+                      {(() => {
+                        const rows = [];
+                        let remaining = form.qty, remainingRounds = form.auto_rounds;
+                        for (let i = 0; i < form.auto_rounds; i++) {
+                          const thisSession = Math.ceil(remaining / remainingRounds);
+                          remaining -= thisSession; remainingRounds--;
+                          rows.push(<div key={i} style={{ fontSize: 12, padding: '2px 0', display: 'flex', justifyContent: 'space-between' }}><span>Sesi {i + 1}:</span><strong>{thisSession} pemenang</strong></div>);
+                        }
+                        return rows;
+                      })()}
+                    </div>
+                  )}
                 </div>
               )}
               <div className="card mb-16" style={{ border: '2px solid #e8e8e8' }}>
@@ -499,9 +516,41 @@ function LogicTab({ pid }) {
                 <div className="card-header">Filter Peserta</div>
                 <div className="card-body">
                   <div className="form-group"><select value={form.filter_method} onChange={e => setForm({ ...form, filter_method: e.target.value })}><option value="all">Semua Peserta</option><option value="direct">Dipilih Langsung</option><option value="multiple">Multiple Value</option></select></div>
+
                   {form.filter_method === 'direct' && (
-                    <div className="alert alert-success" style={{ fontSize: 12 }}>
-                      <strong>⚠ Perhatian!</strong> Peserta yang dipilih langsung akan <strong>dikecualikan dari semua pengundian hadiah lain</strong>.
+                    <div>
+                      <div className="alert alert-success" style={{ fontSize: 12 }}>
+                        <strong>⚠ Perhatian!</strong> Peserta yang dipilih langsung akan <strong>dikecualikan dari semua pengundian hadiah lain</strong>.
+                      </div>
+                      <div className="form-group"><label>Kolom Validasi</label><select value={form.filter_direct_col} onChange={e => setForm({ ...form, filter_direct_col: e.target.value })}><option value="">-- Pilih Kolom --</option>{cols.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}</select></div>
+                      <div className="form-group"><label>Pilih Nilai</label><input value={form.filter_direct_val} onChange={e => setForm({ ...form, filter_direct_val: e.target.value })} placeholder="Ketik nilai peserta..." /></div>
+                    </div>
+                  )}
+
+                  {form.filter_method === 'multiple' && (
+                    <div style={{ background: '#fafbfc', border: '1px solid #eee', borderRadius: 8, padding: 14, marginTop: 8 }}>
+                      <p style={{ fontWeight: 600, fontSize: 12, color: '#555', marginBottom: 8 }}>Filter Kategorikal <span style={{ color: '#e74c3c' }}>*</span></p>
+                      <div className="form-group"><label>Kolom Filter</label><select value={form.filter_cat_col} onChange={e => setForm({ ...form, filter_cat_col: e.target.value, filter_cat_vals: [] })}><option value="">-- Pilih Kolom --</option>{cols.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}</select></div>
+                      <div className="form-group"><label>Pilih Nilai</label><input value={form._catValInput || ''} onChange={e => setForm({ ...form, _catValInput: e.target.value })} placeholder="Ketik nilai, Enter untuk tambah" onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); const v = form._catValInput?.trim(); if (v && !(form.filter_cat_vals || []).includes(v)) { setForm({ ...form, filter_cat_vals: [...(form.filter_cat_vals || []), v], _catValInput: '' }); } } }} />
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 6 }}>
+                        {(form.filter_cat_vals || []).map(v => (
+                          <span key={v} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: '#e8f8f0', color: '#1a7a4c', padding: '4px 10px', borderRadius: 20, fontSize: 12 }}>{v} <button onClick={() => setForm({ ...form, filter_cat_vals: form.filter_cat_vals.filter(x => x !== v) })} style={{ background: 'none', border: 'none', color: '#e74c3c', cursor: 'pointer', fontSize: 14, padding: 0, lineHeight: 1 }}>&times;</button></span>
+                        ))}
+                      </div>
+                      <div style={{ borderTop: '1px solid #eee', margin: '12px 0' }} />
+                      <p style={{ fontWeight: 600, fontSize: 12, color: '#555', marginBottom: 8 }}>Filter Nominal <span style={{ fontWeight: 400, color: '#999' }}>(Opsional)</span></p>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, cursor: 'pointer', marginBottom: 12 }}><input type="checkbox" checked={form.filter_nominal_enabled} onChange={e => setForm({ ...form, filter_nominal_enabled: e.target.checked })} /> Aktifkan filter nominal</label>
+                      {form.filter_nominal_enabled && (
+                        <div>
+                          <div className="form-group"><label>Kolom Numerik</label><select value={form.filter_nominal_col} onChange={e => setForm({ ...form, filter_nominal_col: e.target.value })}><option value="">-- Pilih --</option>{cols.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}</select></div>
+                          <div className="form-group"><label>Jenis Perbandingan</label><select value={form.filter_nominal_type} onChange={e => setForm({ ...form, filter_nominal_type: e.target.value })}><option value="range">Range</option><option value="less_than">Kurang dari</option><option value="more_than">Lebih dari</option></select></div>
+                          {form.filter_nominal_type === 'range' ? (
+                            <div className="flex gap-16"><div className="form-group" style={{ flex: 1 }}><label>Nominal Bawah</label><input type="number" value={form.filter_nominal_lower} onChange={e => setForm({ ...form, filter_nominal_lower: e.target.value })} /></div><div className="form-group" style={{ flex: 1 }}><label>Nominal Atas</label><input type="number" value={form.filter_nominal_upper} onChange={e => setForm({ ...form, filter_nominal_upper: e.target.value })} /></div></div>
+                          ) : (
+                            <div className="form-group"><label>{form.filter_nominal_type === 'less_than' ? 'Nominal (Kurang dari)' : 'Nominal (Lebih dari)'}</label><input type="number" value={form.filter_nominal_lower} onChange={e => setForm({ ...form, filter_nominal_lower: e.target.value })} /></div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
