@@ -211,26 +211,42 @@ function ParticipantsTab({ pid }) {
   const [page, setPage] = useState(1);
   const [settings, setSettings] = useState({ limit_type: 'unlimited', limit_qty: 3, unique_column: '' });
   const [msg, setMsg] = useState('');
+  const [showImport, setShowImport] = useState(false);
+  const [importFile, setImportFile] = useState(null);
+  const [importError, setImportError] = useState('');
+
+  const fetchP = () => {
+    api.getParticipants(pid, page).then(data => {
+      setParticipants(data.participants.map(p => typeof p.data === 'string' ? JSON.parse(p.data) : p.data));
+      setTotal(data.total);
+    });
+  };
 
   useEffect(() => {
     api.getColumns(pid).then(setCols);
     api.getParticipantSettings(pid).then(setSettings);
   }, [pid]);
 
-  useEffect(() => {
-    api.getParticipants(pid, page).then(data => {
-      setParticipants(data.participants.map(p => typeof p.data === 'string' ? JSON.parse(p.data) : p.data));
-      setTotal(data.total);
-    });
-  }, [pid, page]);
+  useEffect(() => { fetchP(); }, [pid, page]);
 
-  const uploadCsv = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
+  const downloadTemplate = () => {
+    const token = localStorage.getItem('token');
+    window.open(`/api/config/${pid}/participants/template?token=${encodeURIComponent(token)}`, '_blank');
+  };
+
+  const handleUpload = async () => {
+    if (!importFile) { setImportError('Pilih file CSV'); return; }
+    setImportError('');
     const fd = new FormData();
-    fd.append('file', file);
-    try { const r = await api.uploadParticipants(pid, fd); setMsg(r.message); setPage(1); }
-    catch (err) { setMsg(err.message); }
+    fd.append('file', importFile);
+    try {
+      const r = await api.uploadParticipants(pid, fd);
+      setMsg(r.message);
+      setShowImport(false);
+      setImportFile(null);
+      setPage(1);
+      fetchP();
+    } catch (err) { setImportError(err.message); }
   };
 
   const saveSettings = async () => {
@@ -243,8 +259,8 @@ function ParticipantsTab({ pid }) {
       <div className="flex-between mb-16">
         <p className="text-muted">Upload CSV. Header harus sesuai Kolom Data.</p>
         <div className="flex gap-8">
-          <input type="file" accept=".csv" onChange={uploadCsv} style={{ fontSize: 12 }} />
-          {total > 0 && <button className="btn btn-danger btn-sm" onClick={async () => { if (confirm('Hapus semua?')) { await api.deleteParticipants(pid); setParticipants([]); setTotal(0); } }}>Hapus</button>}
+          {total > 0 && <button className="btn btn-danger btn-sm" onClick={async () => { if (confirm('Hapus semua?')) { await api.deleteParticipants(pid); setParticipants([]); setTotal(0); } }}>Hapus Data</button>}
+          <button className="btn btn-primary btn-sm" onClick={() => { setImportError(''); setImportFile(null); setShowImport(true); }}>Import CSV</button>
         </div>
       </div>
       {msg && <div className={`alert ${msg.includes('berhasil') ? 'alert-success' : 'alert-error'}`}>{msg}</div>}
@@ -285,7 +301,7 @@ function ParticipantsTab({ pid }) {
               {participants.map((p, i) => (
                 <tr key={i}><td>{(page - 1) * 50 + i + 1}</td>{cols.map(c => <td key={c.id}>{p[c.name] || '-'}</td>)}</tr>
               ))}
-              {participants.length === 0 && <tr><td colSpan={cols.length + 1} className="text-center text-muted">Belum ada data peserta.</td></tr>}
+              {participants.length === 0 && <tr><td colSpan={cols.length + 1} className="text-center text-muted">Belum ada data peserta. Klik Import CSV.</td></tr>}
             </tbody>
           </table>
         </div>
@@ -297,6 +313,35 @@ function ParticipantsTab({ pid }) {
           </div>
         )}
       </div>
+
+      {/* Import Modal */}
+      {showImport && (
+        <div className="modal-overlay" onClick={() => setShowImport(false)}>
+          <div className="modal" onClick={e => e.stopPropagation()}>
+            <div className="modal-header"><h3>Import Peserta</h3><button className="btn btn-outline btn-sm" onClick={() => setShowImport(false)}>X</button></div>
+            <div className="modal-body">
+              <p className="text-muted mb-16">Upload file CSV. Header harus sesuai Tab Kolom Data. Data lama akan di-replace.</p>
+              <div style={{ marginBottom: 16 }}>
+                <button className="btn btn-outline btn-sm" onClick={downloadTemplate}>&#8615; Download Template CSV</button>
+              </div>
+              <div style={{ border: '2px dashed #ddd', borderRadius: 10, padding: 32, textAlign: 'center', cursor: 'pointer', marginBottom: 12 }} onClick={() => document.getElementById('csv-file-input').click()}>
+                <div style={{ fontSize: 32, marginBottom: 8 }}>&#128196;</div>
+                <p style={{ fontSize: 13, color: '#888' }}>Klik untuk memilih file CSV</p>
+                <input id="csv-file-input" type="file" accept=".csv" style={{ display: 'none' }} onChange={e => { setImportFile(e.target.files[0]); setImportError(''); }} />
+              </div>
+              {importFile && <div style={{ padding: '8px 12px', background: '#f5f6f8', borderRadius: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                <span><strong>{importFile.name}</strong> <span className="text-muted">({(importFile.size / 1024).toFixed(1)} KB)</span></span>
+                <button className="btn btn-danger btn-sm" onClick={() => setImportFile(null)}>X</button>
+              </div>}
+              {importError && <div className="alert alert-error">{importError}</div>}
+            </div>
+            <div className="modal-footer">
+              <button className="btn btn-outline" onClick={() => setShowImport(false)}>Batal</button>
+              <button className="btn btn-primary" onClick={handleUpload} disabled={!importFile}>Upload</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
