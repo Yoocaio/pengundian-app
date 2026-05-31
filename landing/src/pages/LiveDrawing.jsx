@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 
-const API = '/api';
+const API = window.location.hostname === 'localhost' ? '/api' : 'https://pengundian-app-server-api.vercel.app/api';
 
 async function fetchData(url) {
   const res = await fetch(url);
