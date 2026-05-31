@@ -381,6 +381,20 @@ function LogicTab({ pid }) {
     filter_cat_col: '', filter_cat_vals: [], filter_nominal_enabled: false,
     filter_nominal_col: '', filter_nominal_type: 'range', filter_nominal_lower: '', filter_nominal_upper: ''
   });
+  const [directSuggestions, setDirectSuggestions] = useState([]);
+  const [catSuggestions, setCatSuggestions] = useState([]);
+  const [showDirectSuggestions, setShowDirectSuggestions] = useState(false);
+  const [showCatSuggestions, setShowCatSuggestions] = useState(false);
+
+  const fetchSuggestions = async (colName, query, setter, showSetter) => {
+    if (!colName || !query) { setter([]); showSetter(false); return; }
+    try {
+      const vals = await api.getColumnValues(pid, colName);
+      const filtered = vals.filter(v => String(v).toLowerCase().includes(query.toLowerCase())).slice(0, 10);
+      setter(filtered);
+      showSetter(filtered.length > 0);
+    } catch (e) { setter([]); }
+  };
 
   const fetch = async () => {
     const [l, p, c] = await Promise.all([api.getLogics(pid), api.getPrizes(pid), api.getColumns(pid)]);
@@ -523,7 +537,7 @@ function LogicTab({ pid }) {
                         <strong>⚠ Perhatian!</strong> Peserta yang dipilih langsung akan <strong>dikecualikan dari semua pengundian hadiah lain</strong>.
                       </div>
                       <div className="form-group"><label>Kolom Validasi</label><select value={form.filter_direct_col} onChange={e => setForm({ ...form, filter_direct_col: e.target.value })}><option value="">-- Pilih Kolom --</option>{cols.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}</select></div>
-                      <div className="form-group"><label>Pilih Nilai</label><input value={form.filter_direct_val} onChange={e => setForm({ ...form, filter_direct_val: e.target.value })} placeholder="Ketik nilai peserta..." /></div>
+                      <div className="form-group" style={{ position: 'relative' }}><label>Pilih Nilai</label><input value={form.filter_direct_val} onChange={e => { setForm({ ...form, filter_direct_val: e.target.value }); fetchSuggestions(form.filter_direct_col, e.target.value, setDirectSuggestions, setShowDirectSuggestions); }} onFocus={() => { if (form.filter_direct_val) fetchSuggestions(form.filter_direct_col, form.filter_direct_val, setDirectSuggestions, setShowDirectSuggestions); }} placeholder="Ketik untuk mencari..." />{showDirectSuggestions && <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: '#fff', border: '1px solid #ddd', borderRadius: 6, maxHeight: 150, overflowY: 'auto', zIndex: 10, boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>{directSuggestions.map(v => <div key={v} style={{ padding: '8px 12px', cursor: 'pointer', fontSize: 13, borderBottom: '1px solid #f3f3f3' }} onClick={() => { setForm({ ...form, filter_direct_val: v }); setShowDirectSuggestions(false); }} onMouseEnter={e => e.target.style.background = '#f0faf3'} onMouseLeave={e => e.target.style.background = '#fff'}>{v}</div>)}</div>}</div>
                     </div>
                   )}
 
@@ -531,7 +545,7 @@ function LogicTab({ pid }) {
                     <div style={{ background: '#fafbfc', border: '1px solid #eee', borderRadius: 8, padding: 14, marginTop: 8 }}>
                       <p style={{ fontWeight: 600, fontSize: 12, color: '#555', marginBottom: 8 }}>Filter Kategorikal <span style={{ color: '#e74c3c' }}>*</span></p>
                       <div className="form-group"><label>Kolom Filter</label><select value={form.filter_cat_col} onChange={e => setForm({ ...form, filter_cat_col: e.target.value, filter_cat_vals: [] })}><option value="">-- Pilih Kolom --</option>{cols.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}</select></div>
-                      <div className="form-group"><label>Pilih Nilai</label><div className="flex gap-8"><input value={form._catValInput || ''} onChange={e => setForm({ ...form, _catValInput: e.target.value })} placeholder="Ketik nilai..." style={{ flex: 1 }} /><button type="button" className="btn btn-sm btn-primary" onClick={() => { const v = (form._catValInput || '').trim(); if (v && !(form.filter_cat_vals || []).includes(v)) setForm({ ...form, filter_cat_vals: [...(form.filter_cat_vals || []), v], _catValInput: '' }); }}>+</button></div></div>
+                      <div className="form-group" style={{ position: 'relative' }}><label>Pilih Nilai</label><div className="flex gap-8"><input value={form._catValInput || ''} onChange={e => { setForm({ ...form, _catValInput: e.target.value }); fetchSuggestions(form.filter_cat_col, e.target.value, setCatSuggestions, setShowCatSuggestions); }} onFocus={() => { if (form._catValInput) fetchSuggestions(form.filter_cat_col, form._catValInput, setCatSuggestions, setShowCatSuggestions); }} placeholder="Ketik untuk mencari..." style={{ flex: 1 }} /><button type="button" className="btn btn-sm btn-primary" onClick={() => { const v = (form._catValInput || '').trim(); if (v && !(form.filter_cat_vals || []).includes(v)) { setForm({ ...form, filter_cat_vals: [...(form.filter_cat_vals || []), v], _catValInput: '' }); setShowCatSuggestions(false); } }}>+</button></div>{showCatSuggestions && <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: '#fff', border: '1px solid #ddd', borderRadius: 6, maxHeight: 150, overflowY: 'auto', zIndex: 10, boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>{catSuggestions.map(v => <div key={v} style={{ padding: '8px 12px', cursor: 'pointer', fontSize: 13, borderBottom: '1px solid #f3f3f3' }} onClick={() => { if (!(form.filter_cat_vals || []).includes(v)) setForm({ ...form, filter_cat_vals: [...(form.filter_cat_vals || []), v], _catValInput: '' }); setShowCatSuggestions(false); }} onMouseEnter={e => e.target.style.background = '#f0faf3'} onMouseLeave={e => e.target.style.background = '#fff'}>{v}</div>)}</div>}</div>
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 6 }}>
                         {(form.filter_cat_vals || []).map(v => (
                           <span key={v} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: '#e8f8f0', color: '#1a7a4c', padding: '4px 10px', borderRadius: 20, fontSize: 12 }}>{v} <button onClick={() => setForm({ ...form, filter_cat_vals: form.filter_cat_vals.filter(x => x !== v) })} style={{ background: 'none', border: 'none', color: '#e74c3c', cursor: 'pointer', fontSize: 14, padding: 0, lineHeight: 1 }}>&times;</button></span>
