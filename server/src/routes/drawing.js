@@ -67,10 +67,20 @@ router.post('/:pid/draw/:logicId', async (req, res) => {
 
     const rounds = logic.auto_rounds || 1;
     const perRound = Math.ceil(logic.qty / rounds);
-    const totalWinners = Math.min(logic.qty, pool.length);
 
-    // Pick all winners at once
-    const allWinners = pool.slice(0, totalWinners);
+    // Count how many already won for this logic (from previous rounds)
+    const { rows: [wonCount] } = await req.app.locals.pool.query(
+      'SELECT COUNT(*) as cnt FROM winners WHERE project_id=$1 AND logic_id=$2',
+      [req.params.pid, logic.id]
+    );
+    const alreadyWon = parseInt(wonCount.cnt);
+    const remaining = Math.min(logic.qty - alreadyWon, pool.length);
+
+    if (remaining <= 0) return res.status(400).json({ error: 'Kuota hadiah sudah habis' });
+
+    // Pick only this round's winners
+    const thisRound = Math.min(perRound, remaining);
+    const roundWinners = pool.slice(0, thisRound);
 
     // Save winners with batch
     const batchId = Date.now().toString();
@@ -78,16 +88,14 @@ router.post('/:pid/draw/:logicId', async (req, res) => {
     const prizeName = prize.rows[0]?.name || logic.target_name;
     const prizeCat = prize.rows[0]?.category || '';
 
-    for (const w of allWinners) {
+    for (const w of roundWinners) {
       await req.app.locals.pool.query(
         'INSERT INTO winners (project_id, logic_id, prize_name, prize_category, participant_data, batch_id) VALUES ($1,$2,$3,$4,$5,$6)',
         [req.params.pid, logic.id, prizeName, prizeCat, JSON.stringify(w), batchId]
       );
     }
 
-    // Return only first round's winners + round info
-    const firstRound = allWinners.slice(0, perRound);
-    res.json({ winners: firstRound, batchId, rounds: rounds, perRound: perRound, totalWinners: totalWinners });
+    res.json({ winners: roundWinners, batchId, totalWinners: thisRound, remainingAfterThis: alreadyWon + thisRound });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
