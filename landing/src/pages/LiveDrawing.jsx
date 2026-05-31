@@ -26,6 +26,7 @@ export default function LiveDrawing() {
   const [displayMeta, setDisplayMeta] = useState({});
   const [upperWinners, setUpperWinners] = useState([]);
   const [lowerWinners, setLowerWinners] = useState([]);
+  const [cumulativeWon, setCumulativeWon] = useState({});
   const [error, setError] = useState('');
   const [showSaveModal, setShowSaveModal] = useState(false);
   const [fileName, setFileName] = useState('');
@@ -43,7 +44,7 @@ export default function LiveDrawing() {
   };
 
   const totalWonForPrize = (prize) => {
-    let count = 0;
+    let count = cumulativeWon[prize.id] || 0;
     upperWinners.forEach(w => { if (w._prizeId === prize.id) count++; });
     lowerWinners.forEach(w => { if (w._prizeId === prize.id) count++; });
     return count;
@@ -127,6 +128,12 @@ export default function LiveDrawing() {
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || 'Gagal menyimpan');
+      // Add to cumulative before clearing
+      const newCumulative = { ...cumulativeWon };
+      lowerWinners.forEach(w => {
+        newCumulative[w._prizeId] = (newCumulative[w._prizeId] || 0) + 1;
+      });
+      setCumulativeWon(newCumulative);
       setLowerWinners([]);
       setShowSaveModal(false);
       setFileName('');
