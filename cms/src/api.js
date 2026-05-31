@@ -1,4 +1,4 @@
-const BASE = '/api';
+const BASE = window.location.hostname === 'localhost' ? '/api' : 'https://pengundian-app-server-api.vercel.app/api';
 
 function getToken() { return localStorage.getItem('token'); }
 
