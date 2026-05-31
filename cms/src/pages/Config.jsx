@@ -214,6 +214,7 @@ function ParticipantsTab({ pid }) {
   const [showImport, setShowImport] = useState(false);
   const [importFile, setImportFile] = useState(null);
   const [importError, setImportError] = useState('');
+  const [uploading, setUploading] = useState(false);
 
   const fetchP = () => {
     api.getParticipants(pid, page).then(data => {
@@ -235,8 +236,9 @@ function ParticipantsTab({ pid }) {
   };
 
   const handleUpload = async () => {
-    if (!importFile) { setImportError('Pilih file CSV'); return; }
+    if (!importFile) { setImportError('Pilih file CSV terlebih dahulu'); return; }
     setImportError('');
+    setUploading(true);
     const fd = new FormData();
     fd.append('file', importFile);
     try {
@@ -247,6 +249,7 @@ function ParticipantsTab({ pid }) {
       setPage(1);
       fetchP();
     } catch (err) { setImportError(err.message); }
+    finally { setUploading(false); }
   };
 
   const saveSettings = async () => {
@@ -337,7 +340,7 @@ function ParticipantsTab({ pid }) {
             </div>
             <div className="modal-footer">
               <button className="btn btn-outline" onClick={() => setShowImport(false)}>Batal</button>
-              <button className="btn btn-primary" onClick={handleUpload} disabled={!importFile}>Upload</button>
+              <button className="btn btn-primary" onClick={handleUpload} disabled={!importFile || uploading}>{uploading ? <span className="spinner" /> : 'Upload'}</button>
             </div>
           </div>
         </div>
