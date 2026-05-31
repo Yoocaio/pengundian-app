@@ -27,7 +27,15 @@ export default function Config() {
       </div>
       <div className="tabs">
         {TABS.map((t, i) => (
-          <button key={i} className={tab === i ? 'active' : ''} onClick={() => setTab(i)}>{t}</button>
+          <button key={i} className={tab === i ? 'active' : ''} onClick={() => {
+            // Validate: tab 4 (Logic) & 5 (Landing) require participant settings saved
+            if ((i === 4 || i === 5) && !localStorage.getItem(`part_settings_${id}`)) {
+              alert('⚠ Harap isi dan simpan Batasan Hadiah & Kolom Validasi Unik di Tab Peserta Undian terlebih dahulu.');
+              setTab(3);
+              return;
+            }
+            setTab(i);
+          }}>{t}</button>
         ))}
       </div>
       {tab === 0 && <ColumnsTab pid={id} />}
@@ -215,6 +223,7 @@ function ParticipantsTab({ pid }) {
   const [importFile, setImportFile] = useState(null);
   const [importError, setImportError] = useState('');
   const [uploading, setUploading] = useState(false);
+  const [settingsSaved, setSettingsSaved] = useState(false);
 
   const fetchP = () => {
     api.getParticipants(pid, page).then(data => {
@@ -253,8 +262,12 @@ function ParticipantsTab({ pid }) {
   };
 
   const saveSettings = async () => {
-    try { await api.saveParticipantSettings(pid, settings); setMsg('Batasan berhasil disimpan'); }
-    catch (err) { setMsg(err.message); }
+    try {
+      await api.saveParticipantSettings(pid, settings);
+      setMsg('Batasan berhasil disimpan');
+      setSettingsSaved(true);
+      localStorage.setItem(`part_settings_${pid}`, JSON.stringify(settings));
+    } catch (err) { setMsg(err.message); }
   };
 
   return (
@@ -292,6 +305,11 @@ function ParticipantsTab({ pid }) {
               </div>
               <button className="btn btn-primary btn-sm" onClick={saveSettings}>Simpan</button>
             </div>
+            {settings.limit_type === 'one_only' && (
+              <div className="alert alert-info" style={{ marginTop: 12, fontSize: 12, lineHeight: 1.6 }}>
+                <strong>&#9888; Informasi:</strong> Dengan batasan <strong>1 Peserta 1 Hadiah</strong>, pengaturan Validasi Bertingkat di setiap Logic <strong>tidak diperlukan</strong> dan akan dinonaktifkan secara otomatis.
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -459,13 +477,22 @@ function LogicTab({ pid }) {
               <div className="card mb-16" style={{ border: '2px solid #e8e8e8' }}>
                 <div className="card-header">Validasi Bertingkat</div>
                 <div className="card-body">
-                  <table><thead><tr><th>Kategori</th><th>Masih berkesempatan?</th></tr></thead>
-                    <tbody>
-                      {usedCategories.map(c => (
-                        <tr key={c}><td>{c}</td><td className="text-center"><input type="checkbox" checked={form.tiered[c] !== false} onChange={e => setForm({ ...form, tiered: { ...form.tiered, [c]: e.target.checked } })} /></td></tr>
-                      ))}
-                    </tbody>
-                  </table>
+                  {(() => {
+                    const ps = localStorage.getItem(`part_settings_${pid}`);
+                    const partSettings = ps ? JSON.parse(ps) : null;
+                    if (partSettings?.limit_type === 'one_only') {
+                      return <div className="text-muted" style={{ color: '#c0392b' }}>&#128274; Validasi Bertingkat dinonaktifkan karena batasan <strong>1 Peserta 1 Hadiah</strong> diterapkan di Tab Peserta Undian.</div>;
+                    }
+                    return (
+                      <table><thead><tr><th>Kategori</th><th>Masih berkesempatan?</th></tr></thead>
+                        <tbody>
+                          {usedCategories.map(c => (
+                            <tr key={c}><td>{c}</td><td className="text-center"><input type="checkbox" checked={form.tiered[c] !== false} onChange={e => setForm({ ...form, tiered: { ...form.tiered, [c]: e.target.checked } })} /></td></tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    );
+                  })()}
                 </div>
               </div>
               <div className="card" style={{ border: '2px solid #e8e8e8' }}>
