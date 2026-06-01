@@ -21,7 +21,7 @@ export default function Config() {
       <div className="page-header flex-between">
         <div>
           <h2>Konfigurasi: {project.name}</h2>
-          <p className="text-muted">jatismobile.com/{project.url_path}</p>
+          <p className="text-muted">pengundian.jatismobile.com/{project.url_path}</p>
         </div>
         <button className="btn btn-outline" onClick={() => navigate('/projects')}>Kembali</button>
       </div>

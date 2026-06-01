@@ -52,7 +52,7 @@ export default function Projects() {
                 <tr key={p.id}>
                   <td>{i + 1}</td>
                   <td><strong>{p.name}</strong></td>
-                  <td><code>jatismobile.com/{p.url_path}</code></td>
+                  <td><code>pengundian.jatismobile.com/{p.url_path}</code></td>
                   <td><span className={`badge ${p.status === 'active' ? 'badge-active' : 'badge-inactive'}`}>{p.status === 'active' ? 'Aktif' : 'Tidak Aktif'}</span></td>
                   <td>
                     <div className="flex gap-8">
@@ -76,7 +76,7 @@ export default function Projects() {
             <div className="modal-body">
               {error && <div className="alert alert-error">{error}</div>}
               <div className="form-group"><label>Nama Proyek</label><input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} /></div>
-              <div className="form-group"><label>URL Path</label><input value={form.url_path} onChange={e => setForm({ ...form, url_path: e.target.value.replace(/\s/g, '-').toLowerCase() })} /><div className="text-muted">jatismobile.com/{form.url_path || 'nama-project'}</div></div>
+              <div className="form-group"><label>URL Path</label><input value={form.url_path} onChange={e => setForm({ ...form, url_path: e.target.value.replace(/\s/g, '-').toLowerCase() })} /><div className="text-muted">pengundian.jatismobile.com/{form.url_path || 'nama-project'}</div></div>
               <div className="form-group"><label>Status</label><select value={form.status} onChange={e => setForm({ ...form, status: e.target.value })}><option value="active">Aktif</option><option value="inactive">Tidak Aktif</option></select></div>
             </div>
             <div className="modal-footer"><button className="btn btn-outline" onClick={() => setShowModal(false)}>Batal</button><button className="btn btn-primary" onClick={save}>Simpan</button></div>
