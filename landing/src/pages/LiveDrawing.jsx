@@ -158,16 +158,16 @@ export default function LiveDrawing() {
   const bgBrightness = getBrightness(cfg.bg_color || '#1a1a2e');
   const isLight = bgBrightness > 128;
 
-  // Adaptive card styles
-  const cardBg = isLight ? 'rgba(0,0,0,0.03)' : 'rgba(255,255,255,0.04)';
-  const cardBorder = isLight ? '2px solid rgba(0,0,0,0.08)' : '2px solid rgba(255,255,255,0.10)';
-  const cardBorderHover = isLight ? 'rgba(0,0,0,0.15)' : 'rgba(255,255,255,0.2)';
-  const metaBg = isLight ? 'rgba(0,0,0,0.04)' : 'rgba(255,255,255,0.06)';
-  const tagBg = isLight ? 'rgba(0,0,0,0.04)' : 'rgba(255,255,255,0.06)';
-  const tagBorder = isLight ? '1px solid rgba(0,0,0,0.12)' : '1px solid rgba(255,255,255,0.2)';
-  const btnDefaultBg = isLight ? 'rgba(0,0,0,0.04)' : 'rgba(255,255,255,0.06)';
-  const btnDefaultBorder = isLight ? '1px solid rgba(0,0,0,0.12)' : '1px solid rgba(255,255,255,0.2)';
-  const tableBorder = isLight ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.06)';
+  // Adaptive card styles — high contrast
+  const cardBg = isLight ? 'rgba(0,0,0,0.04)' : 'rgba(255,255,255,0.10)';
+  const cardBorder = isLight ? '2px solid rgba(0,0,0,0.12)' : '2px solid rgba(255,255,255,0.18)';
+  const cardBorderHover = isLight ? 'rgba(0,0,0,0.2)' : 'rgba(255,255,255,0.3)';
+  const metaBg = isLight ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.10)';
+  const tagBg = isLight ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.10)';
+  const tagBorder = isLight ? '1px solid rgba(0,0,0,0.15)' : '1px solid rgba(255,255,255,0.30)';
+  const btnDefaultBg = isLight ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.10)';
+  const btnDefaultBorder = isLight ? '1px solid rgba(0,0,0,0.15)' : '1px solid rgba(255,255,255,0.30)';
+  const tableBorder = isLight ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.08)';
 
   return (
     <div style={{ minHeight: '100vh', background: cfg.bg_color || '#1a1a2e', color: cfg.text_color || '#fff', fontFamily: 'Segoe UI, sans-serif' }}>
