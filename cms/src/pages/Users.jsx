@@ -60,8 +60,8 @@ export default function Users() {
       </div>
 
       {showForm && (
-        <div className="modal-overlay" onClick={() => setShowForm(false)}>
-          <div className="modal" style={{ width: 400 }} onClick={e => e.stopPropagation()}>
+        <div className="modal-overlay">
+          <div className="modal" style={{ width: 400 }}>
             <div className="modal-header"><h3>{editId ? 'Edit' : 'Tambah'} User</h3><button className="btn btn-outline btn-sm" onClick={() => setShowForm(false)}>X</button></div>
             <div className="modal-body">
               <div className="form-group"><label>Nama</label><input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} /></div>
