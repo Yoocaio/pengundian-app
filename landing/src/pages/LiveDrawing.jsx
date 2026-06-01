@@ -147,6 +147,28 @@ export default function LiveDrawing() {
   const cols = data.columns?.filter(c => c.show_on_web) || [];
   const drawCol = cfg.draw_by_column || 'No. Undian';
 
+  // Auto-detect background brightness
+  const hexToRgb = (hex) => {
+    const h = hex.replace('#','');
+    return { r: parseInt(h.substring(0,2),16), g: parseInt(h.substring(2,4),16), b: parseInt(h.substring(4,6),16) };
+  };
+  const getBrightness = (hex) => {
+    try { const {r,g,b}=hexToRgb(hex); return (r*299+g*587+b*114)/1000; } catch(e) { return 0; }
+  };
+  const bgBrightness = getBrightness(cfg.bg_color || '#1a1a2e');
+  const isLight = bgBrightness > 128;
+
+  // Adaptive card styles
+  const cardBg = isLight ? 'rgba(0,0,0,0.03)' : 'rgba(255,255,255,0.04)';
+  const cardBorder = isLight ? '2px solid rgba(0,0,0,0.08)' : '2px solid rgba(255,255,255,0.10)';
+  const cardBorderHover = isLight ? 'rgba(0,0,0,0.15)' : 'rgba(255,255,255,0.2)';
+  const metaBg = isLight ? 'rgba(0,0,0,0.04)' : 'rgba(255,255,255,0.06)';
+  const tagBg = isLight ? 'rgba(0,0,0,0.04)' : 'rgba(255,255,255,0.06)';
+  const tagBorder = isLight ? '1px solid rgba(0,0,0,0.12)' : '1px solid rgba(255,255,255,0.2)';
+  const btnDefaultBg = isLight ? 'rgba(0,0,0,0.04)' : 'rgba(255,255,255,0.06)';
+  const btnDefaultBorder = isLight ? '1px solid rgba(0,0,0,0.12)' : '1px solid rgba(255,255,255,0.2)';
+  const tableBorder = isLight ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.06)';
+
   return (
     <div style={{ minHeight: '100vh', background: cfg.bg_color || '#1a1a2e', color: cfg.text_color || '#fff', fontFamily: 'Segoe UI, sans-serif' }}>
       {cfg.banner_url && <div style={{ width: '100%', maxHeight: 140, overflow: 'hidden' }}><img src={cfg.banner_url} alt="" style={{ width: '100%', objectFit: cfg.banner_fit || 'cover', maxHeight: 140 }} /></div>}
@@ -165,22 +187,23 @@ export default function LiveDrawing() {
               const won = totalWonForPrize(p);
               const exhausted = won >= p.qty;
               const remaining = p.qty - won;
+              const isSelected = selectedPrize?.id === p.id;
               return (
-              <button key={p.id} onClick={() => !isDrawing && !exhausted && setSelectedPrize(p)} style={{ padding: '10px 16px', borderRadius: 10, border: selectedPrize?.id === p.id ? '2px solid #ffd700' : '1px solid rgba(255,255,255,0.2)', background: selectedPrize?.id === p.id ? 'rgba(255,215,0,0.15)' : 'rgba(255,255,255,0.06)', color: 'inherit', cursor: exhausted ? 'not-allowed' : 'pointer', fontSize: 13, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 8, minWidth: 140, opacity: exhausted ? 0.35 : 1 }} disabled={isDrawing || exhausted}>
-                {p.image_url ? <img src={p.image_url} alt="" style={{ width: 36, height: 36, objectFit: 'cover', borderRadius: 6, opacity: exhausted ? 0.5 : 1 }} /> : <div style={{ width: 36, height: 36, borderRadius: 6, background: 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>&#127873;</div>}
-                <div><div style={{ fontSize: 12 }}>{p.name}</div><div style={{ fontSize: 10, opacity: 0.7 }}>{p.category} &middot; {exhausted ? <span style={{ color: '#e74c3c' }}>Habis ({p.qty}/{p.qty})</span> : won > 0 ? <span style={{ color: '#ffd700' }}>Tersisa {remaining}/{p.qty}</span> : 'Qty: ' + p.qty}</div></div>
+              <button key={p.id} onClick={() => !isDrawing && !exhausted && setSelectedPrize(p)} style={{ padding: '10px 16px', borderRadius: 10, border: isSelected ? '2px solid #ffd700' : tagBorder, background: isSelected ? 'rgba(255,215,0,0.15)' : tagBg, color: 'inherit', cursor: exhausted ? 'not-allowed' : 'pointer', fontSize: 13, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 8, minWidth: 140, opacity: exhausted ? 0.35 : 1 }} disabled={isDrawing || exhausted}>
+                {p.image_url ? <img src={p.image_url} alt="" style={{ width: 36, height: 36, objectFit: 'cover', borderRadius: 6, opacity: exhausted ? 0.5 : 1 }} /> : <div style={{ width: 36, height: 36, borderRadius: 6, background: metaBg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>&#127873;</div>}
+                <div><div style={{ fontSize: 12 }}>{p.name}</div><div style={{ fontSize: 10, opacity: 0.7 }}>{p.category} &middot; {exhausted ? <span style={{ color: '#e74c3c' }}>Habis</span> : won > 0 ? <span style={{ color: '#2ecc71' }}>Tersisa {remaining}/{p.qty}</span> : 'Qty: ' + p.qty}</div></div>
               </button>
             )})}
           </div>
         </div>
 
         {/* Drawing Area */}
-        <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 16, padding: '30px 20px', textAlign: 'center', marginBottom: 20, border: '1px solid rgba(255,255,255,0.06)' }}>
+        <div style={{ background: cardBg, borderRadius: 16, padding: '30px 20px', textAlign: 'center', marginBottom: 20, border: cardBorder, boxShadow: isLight ? '0 2px 8px rgba(0,0,0,0.06)' : 'none' }}>
           {countdown > 0 && <div style={{ width: 50, height: 50, borderRadius: '50%', border: '3px solid #ffd700', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, fontWeight: 700, color: '#ffd700', marginBottom: 10 }}>{countdown}</div>}
-          <div style={{ fontSize: 10, opacity: 0.4, textTransform: 'uppercase', letterSpacing: 2, marginBottom: 6 }}>{drawCol}</div>
+          <div style={{ fontSize: 10, opacity: 0.5, textTransform: 'uppercase', letterSpacing: 2, marginBottom: 6 }}>{drawCol}</div>
           <div style={{ fontSize: 48, fontWeight: 800, letterSpacing: 12, fontFamily: 'Courier New, monospace', color: upperWinners.length > 0 ? '#2ecc71' : '#ffd700', marginBottom: 8 }}>{displayVal}</div>
           {cols.length > 0 && <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap', marginTop: 10 }}>
-            {cols.map(c => <div key={c.id} style={{ background: 'rgba(255,255,255,0.06)', borderRadius: 8, padding: '8px 14px', fontSize: 11 }}><div style={{ opacity: 0.5, marginBottom: 2 }}>{c.name}</div><div style={{ fontWeight: 600, fontFamily: 'monospace' }}>{c.masking_6digit ? maskValue(displayMeta[c.name] || '---') : (displayMeta[c.name] || '---')}</div></div>)}
+            {cols.map(c => <div key={c.id} style={{ background: metaBg, borderRadius: 8, padding: '8px 14px', fontSize: 11 }}><div style={{ opacity: 0.5, marginBottom: 2 }}>{c.name}</div><div style={{ fontWeight: 600, fontFamily: 'monospace' }}>{c.masking_6digit ? maskValue(displayMeta[c.name] || '---') : (displayMeta[c.name] || '---')}</div></div>)}
           </div>}
           {error && <div style={{ color: '#e74c3c', fontSize: 12, marginTop: 10 }}>{error}</div>}
           <div style={{ display: 'flex', gap: 12, justifyContent: 'center', marginTop: 20 }}>
@@ -190,7 +213,7 @@ export default function LiveDrawing() {
         </div>
 
         {/* Upper Table */}
-        <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 12, padding: 16, marginBottom: 16, border: '1px solid rgba(255,255,255,0.06)' }}>
+        <div style={{ background: cardBg, borderRadius: 12, padding: 16, marginBottom: 16, border: cardBorder, boxShadow: isLight ? '0 2px 8px rgba(0,0,0,0.06)' : 'none' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10 }}>
             <h3 style={{ fontSize: 13, textTransform: 'uppercase', opacity: 0.7 }}>Pemenang Sesi Ini</h3>
             {upperWinners.length > 0 && <div style={{ display: 'flex', gap: 8 }}>
@@ -208,7 +231,7 @@ export default function LiveDrawing() {
         </div>
 
         {/* Lower Table */}
-        <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 12, padding: 16, border: '1px solid rgba(255,255,255,0.06)' }}>
+        <div style={{ background: cardBg, borderRadius: 12, padding: 16, border: cardBorder, boxShadow: isLight ? '0 2px 8px rgba(0,0,0,0.06)' : 'none' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10 }}>
             <h3 style={{ fontSize: 13, textTransform: 'uppercase', opacity: 0.7 }}>Data Tersimpan</h3>
             {lowerWinners.length > 0 && <button onClick={() => setShowSaveModal(true)} style={{ padding: '4px 10px', borderRadius: 6, border: 'none', background: '#2ecc71', color: '#fff', cursor: 'pointer', fontSize: 11 }}>Simpan di CMS</button>}
