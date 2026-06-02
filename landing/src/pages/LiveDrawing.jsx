@@ -19,6 +19,11 @@ function maskValue(val, digits = 6) {
 export default function LiveDrawing() {
   const { urlPath } = useParams();
   const [data, setData] = useState(null);
+  const [loggedIn, setLoggedIn] = useState(false);
+  const [authEmail, setAuthEmail] = useState('');
+  const [authPassword, setAuthPassword] = useState('');
+  const [authError, setAuthError] = useState('');
+  const [authLoading, setAuthLoading] = useState(false);
   const [selectedPrize, setSelectedPrize] = useState(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [countdown, setCountdown] = useState(0);
@@ -33,8 +38,35 @@ export default function LiveDrawing() {
   const intervalRef = useRef(null);
 
   useEffect(() => {
-    fetchData(`${API}/drawing/${urlPath}/data`).then(setData).catch(e => setError(e.message));
-  }, [urlPath]);
+    const token = localStorage.getItem('ld_token');
+    if (token) {
+      setLoggedIn(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (loggedIn) {
+      fetchData(`${API}/drawing/${urlPath}/data`).then(setData).catch(e => setError(e.message));
+    }
+  }, [urlPath, loggedIn]);
+
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setAuthError('');
+    setAuthLoading(true);
+    try {
+      const res = await fetch(`${API}/auth/login`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: authEmail, password: authPassword })
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error);
+      localStorage.setItem('ld_token', json.token);
+      localStorage.setItem('ld_user', JSON.stringify({ name: json.name, email: json.email }));
+      setLoggedIn(true);
+    } catch (err) { setAuthError(err.message); }
+    finally { setAuthLoading(false); }
+  };
 
   const findLogic = (prize) => {
     if (!data?.logics) return null;
@@ -140,6 +172,34 @@ export default function LiveDrawing() {
       setError('');
     } catch (e) { setError(e.message); }
   };
+
+  // Show login page if not authenticated
+  if (!loggedIn) {
+    return (
+      <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #1a3c34, #2c5e4e, #1a3c34)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'Segoe UI, sans-serif' }}>
+        <div style={{ background: '#fff', borderRadius: 14, padding: '34px 32px', width: 400, boxShadow: '0 24px 64px rgba(0,0,0,0.35)' }}>
+          <div style={{ textAlign: 'center', marginBottom: 24 }}>
+            <div style={{ width: 60, height: 60, background: 'linear-gradient(135deg, #2ecc71, #27ae60)', borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px', fontSize: 28, color: '#fff', fontWeight: 800 }}>&#127922;</div>
+            <h2 style={{ fontSize: 18, color: '#1a3c34', marginBottom: 4 }}>Live Drawing</h2>
+            <p style={{ fontSize: 12, color: '#999' }}>Silakan login untuk mengakses halaman pengundian</p>
+          </div>
+          {authError && <div style={{ padding: '10px 14px', borderRadius: 8, fontSize: 12, background: '#fdecea', color: '#c0392b', marginBottom: 16 }}>{authError}</div>}
+          <form onSubmit={handleLogin}>
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#666', marginBottom: 6 }}>Email</label>
+              <input type="email" value={authEmail} onChange={e => setAuthEmail(e.target.value)} placeholder="email@jatismobile.com" required style={{ width: '100%', padding: '10px 12px', border: '1.5px solid #e0e0e0', borderRadius: 8, fontSize: 14, outline: 'none' }} />
+            </div>
+            <div style={{ marginBottom: 20 }}>
+              <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#666', marginBottom: 6 }}>Password</label>
+              <input type="password" value={authPassword} onChange={e => setAuthPassword(e.target.value)} placeholder="Masukkan password" required style={{ width: '100%', padding: '10px 12px', border: '1.5px solid #e0e0e0', borderRadius: 8, fontSize: 14, outline: 'none' }} />
+            </div>
+            <button type="submit" disabled={authLoading} style={{ width: '100%', padding: 12, background: '#1a3c34', color: '#fff', border: 'none', borderRadius: 8, fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>{authLoading ? 'Memproses...' : 'Masuk'}</button>
+          </form>
+          <p style={{ textAlign: 'center', fontSize: 11, color: '#bbb', marginTop: 16 }}>Gunakan akun CMS untuk login</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!data) return <div style={{ minHeight: '100vh', background: '#1a1a2e', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}><div style={{ width: 30, height: 30, border: '2px solid #fff', borderTopColor: '#2ecc71', borderRadius: '50%', animation: 'spin 0.5s linear infinite' }} /></div>;
 
