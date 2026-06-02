@@ -38,21 +38,30 @@ export default function LiveDrawing() {
   const intervalRef = useRef(null);
 
   useEffect(() => {
-    // Check URL params for token (SSO from CMS)
-    const params = new URLSearchParams(window.location.search);
-    const urlToken = params.get('token');
-    if (urlToken) {
-      localStorage.setItem('ld_token', urlToken);
-      // Clean URL
-      window.history.replaceState({}, '', window.location.pathname);
-      setLoggedIn(true);
-      return;
-    }
-    // Check localStorage
-    const token = localStorage.getItem('ld_token');
-    if (token) {
-      setLoggedIn(true);
-    }
+    const initAuth = async () => {
+      // Check URL params for token (SSO from CMS)
+      const params = new URLSearchParams(window.location.search);
+      const urlToken = params.get('token');
+      if (urlToken) {
+        localStorage.setItem('ld_token', urlToken);
+        window.history.replaceState({}, '', window.location.pathname);
+        setLoggedIn(true);
+        return;
+      }
+      // Check localStorage & validate token with backend
+      const token = localStorage.getItem('ld_token');
+      if (token) {
+        try {
+          const res = await fetch(`${API}/drawing/${urlPath}/data`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          if (res.ok) { setLoggedIn(true); return; }
+        } catch (e) {}
+        // Token expired/invalid
+        localStorage.removeItem('ld_token');
+      }
+    };
+    initAuth();
   }, []);
 
   useEffect(() => {
@@ -244,6 +253,9 @@ export default function LiveDrawing() {
     <div style={{ minHeight: '100vh', background: cfg.bg_color || '#1a1a2e', color: cfg.text_color || '#fff', fontFamily: 'Segoe UI, sans-serif' }}>
       {cfg.banner_url && <div style={{ width: '100%', maxHeight: 140, overflow: 'hidden' }}><img src={cfg.banner_url} alt="" style={{ width: '100%', objectFit: cfg.banner_fit || 'cover', maxHeight: 140 }} /></div>}
       <div style={{ maxWidth: 1000, margin: '0 auto', padding: '20px 24px' }}>
+        <div style={{ textAlign: 'right', marginBottom: 8 }}>
+          <button onClick={() => { localStorage.removeItem('ld_token'); window.location.reload(); }} style={{ background: 'none', border: 'none', color: 'inherit', opacity: 0.4, cursor: 'pointer', fontSize: 11, fontFamily: 'inherit' }}>&#8592; Keluar</button>
+        </div>
         <div style={{ textAlign: 'center', marginBottom: 20 }}>
           {cfg.logo_url && <img src={cfg.logo_url} alt="" style={{ maxWidth: 56, maxHeight: 56, display: 'block', margin: '0 auto 8px' }} />}
           <h1 style={{ fontSize: 28, fontWeight: 800, letterSpacing: 5, marginBottom: 2 }}>{cfg.title || 'LIVE DRAWING'}</h1>
