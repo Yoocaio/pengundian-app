@@ -266,9 +266,6 @@ export default function LiveDrawing() {
     <div style={{ minHeight: '100vh', background: cfg.bg_color || '#1a1a2e', color: cfg.text_color || '#fff', fontFamily: 'Segoe UI, sans-serif' }}>
       {cfg.banner_url && <div style={{ width: '100%', maxHeight: 140, overflow: 'hidden' }}><img src={cfg.banner_url} alt="" style={{ width: '100%', objectFit: cfg.banner_fit || 'cover', maxHeight: 140 }} /></div>}
       <div style={{ maxWidth: 1000, margin: '0 auto', padding: '20px 24px' }}>
-        <div style={{ textAlign: 'right', marginBottom: 8 }}>
-          <button onClick={() => { localStorage.removeItem('ld_token'); localStorage.removeItem('ld_user'); window.location.reload(); }} style={{ background: 'none', border: 'none', color: 'inherit', opacity: 0.4, cursor: 'pointer', fontSize: 11, fontFamily: 'inherit' }}>&#8592; Keluar</button>
-        </div>
         <div style={{ textAlign: 'center', marginBottom: 20 }}>
           {cfg.logo_url && <img src={cfg.logo_url} alt="" style={{ maxWidth: 56, maxHeight: 56, display: 'block', margin: '0 auto 8px' }} />}
           <h1 style={{ fontSize: 28, fontWeight: 800, letterSpacing: 5, marginBottom: 2 }}>{cfg.title || 'LIVE DRAWING'}</h1>
