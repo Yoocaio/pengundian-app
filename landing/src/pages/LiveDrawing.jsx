@@ -20,6 +20,7 @@ export default function LiveDrawing() {
   const { urlPath } = useParams();
   const [data, setData] = useState(null);
   const [loggedIn, setLoggedIn] = useState(false);
+  const [authChecking, setAuthChecking] = useState(true);
   const [authEmail, setAuthEmail] = useState('');
   const [authPassword, setAuthPassword] = useState('');
   const [authError, setAuthError] = useState('');
@@ -46,6 +47,7 @@ export default function LiveDrawing() {
         localStorage.setItem('ld_token', urlToken);
         window.history.replaceState({}, '', window.location.pathname);
         setLoggedIn(true);
+        setAuthChecking(false);
         return;
       }
       // Check localStorage & validate token with backend
@@ -55,11 +57,12 @@ export default function LiveDrawing() {
           const res = await fetch(`${API}/drawing/${urlPath}/data`, {
             headers: { 'Authorization': `Bearer ${token}` }
           });
-          if (res.ok) { setLoggedIn(true); return; }
+          if (res.ok) { setLoggedIn(true); setAuthChecking(false); return; }
         } catch (e) {}
         // Token expired/invalid
         localStorage.removeItem('ld_token');
       }
+      setAuthChecking(false);
     };
     initAuth();
   }, []);
@@ -192,6 +195,15 @@ export default function LiveDrawing() {
       setError('');
     } catch (e) { setError(e.message); }
   };
+
+  // Show loading spinner while checking auth
+  if (authChecking) {
+    return (
+      <div style={{ minHeight: '100vh', background: '#1a1a2e', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ width: 30, height: 30, border: '2px solid rgba(255,255,255,0.2)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.5s linear infinite' }} />
+      </div>
+    );
+  }
 
   // Show login page if not authenticated
   if (!loggedIn) {
