@@ -54,13 +54,15 @@ export default function LiveDrawing() {
       const token = localStorage.getItem('ld_token');
       if (token) {
         try {
-          const res = await fetch(`${API}/drawing/${urlPath}/data`, {
+          // Validate token against protected endpoint
+          const res = await fetch(`${API}/projects`, {
             headers: { 'Authorization': `Bearer ${token}` }
           });
           if (res.ok) { setLoggedIn(true); setAuthChecking(false); return; }
         } catch (e) {}
         // Token expired/invalid
         localStorage.removeItem('ld_token');
+        localStorage.removeItem('ld_user');
       }
       setAuthChecking(false);
     };
@@ -266,7 +268,7 @@ export default function LiveDrawing() {
       {cfg.banner_url && <div style={{ width: '100%', maxHeight: 140, overflow: 'hidden' }}><img src={cfg.banner_url} alt="" style={{ width: '100%', objectFit: cfg.banner_fit || 'cover', maxHeight: 140 }} /></div>}
       <div style={{ maxWidth: 1000, margin: '0 auto', padding: '20px 24px' }}>
         <div style={{ textAlign: 'right', marginBottom: 8 }}>
-          <button onClick={() => { localStorage.removeItem('ld_token'); window.location.reload(); }} style={{ background: 'none', border: 'none', color: 'inherit', opacity: 0.4, cursor: 'pointer', fontSize: 11, fontFamily: 'inherit' }}>&#8592; Keluar</button>
+          <button onClick={() => { localStorage.removeItem('ld_token'); localStorage.removeItem('ld_user'); window.location.reload(); }} style={{ background: 'none', border: 'none', color: 'inherit', opacity: 0.4, cursor: 'pointer', fontSize: 11, fontFamily: 'inherit' }}>&#8592; Keluar</button>
         </div>
         <div style={{ textAlign: 'center', marginBottom: 20 }}>
           {cfg.logo_url && <img src={cfg.logo_url} alt="" style={{ maxWidth: 56, maxHeight: 56, display: 'block', margin: '0 auto 8px' }} />}
