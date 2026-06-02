@@ -16,6 +16,7 @@ const schema = `
     role VARCHAR(50) DEFAULT 'admin',
     reset_otp VARCHAR(10),
     reset_otp_expires TIMESTAMPTZ,
+    logged_out_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ DEFAULT NOW()
   );
 
@@ -139,6 +140,9 @@ const schema = `
     created_by INTEGER REFERENCES users(id),
     created_at TIMESTAMPTZ DEFAULT NOW()
   );
+
+  -- Add logged_out_at to existing users table (for real-time token revocation)
+  ALTER TABLE users ADD COLUMN IF NOT EXISTS logged_out_at TIMESTAMPTZ;
 
   -- Indexes
   CREATE INDEX IF NOT EXISTS idx_participants_project ON participants(project_id);

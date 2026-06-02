@@ -50,17 +50,16 @@ export default function LiveDrawing() {
         setAuthChecking(false);
         return;
       }
-      // Check localStorage & validate token with backend
+      // Check localStorage & validate token
       const token = localStorage.getItem('ld_token');
       if (token) {
         try {
-          // Validate token against protected endpoint
           const res = await fetch(`${API}/projects`, {
             headers: { 'Authorization': `Bearer ${token}` }
           });
           if (res.ok) { setLoggedIn(true); setAuthChecking(false); return; }
         } catch (e) {}
-        // Token expired/invalid
+        // Token revoked/invalid
         localStorage.removeItem('ld_token');
         localStorage.removeItem('ld_user');
       }

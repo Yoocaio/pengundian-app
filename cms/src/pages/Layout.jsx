@@ -4,7 +4,11 @@ export default function Layout() {
   const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem('user') || '{}');
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    const email = JSON.parse(localStorage.getItem('user') || '{}').email;
+    if (email) {
+      try { await fetch('/api/auth/logout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email }) }); } catch (e) {}
+    }
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     navigate('/login');

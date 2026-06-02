@@ -102,4 +102,19 @@ router.post('/reset-password', async (req, res) => {
   }
 });
 
+// POST /api/auth/logout — blacklist all tokens for user
+router.post('/logout', async (req, res) => {
+  const { email } = req.body;
+  if (!email) return res.status(400).json({ error: 'Email wajib diisi' });
+  try {
+    await req.app.locals.pool.query(
+      'UPDATE users SET logged_out_at = NOW() WHERE email = $1',
+      [email.toLowerCase().trim()]
+    );
+    res.json({ message: 'Logout berhasil' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;
