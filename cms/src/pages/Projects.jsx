@@ -59,7 +59,7 @@ export default function Projects() {
                       <button className="btn btn-primary btn-sm" onClick={() => navigate(`/projects/${p.id}/config`)}>Konfigurasi</button>
                       <button className="btn btn-outline btn-sm" onClick={() => openEdit(p)}>Edit</button>
                       <button className="btn btn-danger btn-sm" onClick={() => remove(p.id)}>Hapus</button>
-                      <button className="btn btn-success btn-sm" onClick={() => window.open(`https://pengundian-app-udrl.vercel.app/landing/${p.url_path}`, '_blank')}>Link</button>
+                      <button className="btn btn-success btn-sm" onClick={() => window.open(`https://pengundian-app-udrl.vercel.app/landing/${p.url_path}?token=${encodeURIComponent(localStorage.getItem('token')||'')}`, '_blank')}>Link</button>
                     </div>
                   </td>
                 </tr>

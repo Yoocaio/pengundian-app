@@ -618,7 +618,7 @@ function LandingTab({ pid, project }) {
     <div>
       <div className="flex-between mb-16">
         <p className="text-muted">Atur tampilan landing page.</p>
-        <button className="btn btn-success btn-sm" onClick={() => window.open(`https://pengundian-app-udrl.vercel.app/landing/${project?.url_path || pid}`, '_blank')}>Preview Live</button>
+        <button className="btn btn-success btn-sm" onClick={() => window.open(`https://pengundian-app-udrl.vercel.app/landing/${project?.url_path || pid}?token=${encodeURIComponent(localStorage.getItem('token')||'')}`, '_blank')}>Preview Live</button>
       </div>
       {msg && <div className={`alert ${msg.includes('Berhasil') ? 'alert-success' : 'alert-error'}`}>{msg}</div>}
       <div className="card">

@@ -38,6 +38,17 @@ export default function LiveDrawing() {
   const intervalRef = useRef(null);
 
   useEffect(() => {
+    // Check URL params for token (SSO from CMS)
+    const params = new URLSearchParams(window.location.search);
+    const urlToken = params.get('token');
+    if (urlToken) {
+      localStorage.setItem('ld_token', urlToken);
+      // Clean URL
+      window.history.replaceState({}, '', window.location.pathname);
+      setLoggedIn(true);
+      return;
+    }
+    // Check localStorage
     const token = localStorage.getItem('ld_token');
     if (token) {
       setLoggedIn(true);
