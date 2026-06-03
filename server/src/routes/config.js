@@ -205,24 +205,28 @@ router.get('/:pid/landing', async (req, res) => {
   res.json(rows[0] || {});
 });
 
-router.post('/:pid/landing', upload.fields([{ name: 'banner' }, { name: 'logo' }, { name: 'music' }]), async (req, res) => {
-  const b = req.body;
-  const banner = req.files?.banner?.[0] ? '/uploads/' + req.files.banner[0].filename : undefined;
-  const logo = req.files?.logo?.[0] ? '/uploads/' + req.files.logo[0].filename : undefined;
-  const music = req.files?.music?.[0] ? '/uploads/' + req.files.music[0].filename : undefined;
-  const existing = await req.app.locals.pool.query('SELECT * FROM landing_config WHERE project_id=$1', [req.params.pid]);
-  if (existing.rows.length > 0) {
-    await req.app.locals.pool.query(
-      'UPDATE landing_config SET title=$1, subtitle=$2, banner_url=COALESCE($3,banner_url), banner_fit=$4, logo_url=COALESCE($5,logo_url), bg_color=$6, text_color=$7, draw_by_column=$8, show_prizes=$9, music_url=COALESCE($10,music_url) WHERE project_id=$11',
-      [b.title, b.subtitle, banner, b.banner_fit, logo, b.bg_color, b.text_color, b.draw_by_column, b.show_prizes === 'true', music, req.params.pid]
-    );
-  } else {
-    await req.app.locals.pool.query(
-      'INSERT INTO landing_config (project_id,title,subtitle,banner_url,banner_fit,logo_url,bg_color,text_color,draw_by_column,show_prizes,music_url) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)',
-      [req.params.pid, b.title, b.subtitle, banner, b.banner_fit, logo, b.bg_color, b.text_color, b.draw_by_column, b.show_prizes === 'true', music]
-    );
-  }
-  res.json({ message: 'OK' });
+router.post('/:pid/landing', async (req, res) => {
+  try {
+    const b = req.body;
+    // Accept base64 data URLs for banner, logo, music (more reliable on serverless)
+    const banner = b.banner_data || undefined;
+    const logo = b.logo_data || undefined;
+    const music = b.music_data || undefined;
+
+    const existing = await req.app.locals.pool.query('SELECT * FROM landing_config WHERE project_id=$1', [req.params.pid]);
+    if (existing.rows.length > 0) {
+      await req.app.locals.pool.query(
+        'UPDATE landing_config SET title=$1, subtitle=$2, banner_url=COALESCE($3,banner_url), banner_fit=$4, logo_url=COALESCE($5,logo_url), bg_color=$6, text_color=$7, draw_by_column=$8, show_prizes=$9, music_url=COALESCE($10,music_url) WHERE project_id=$11',
+        [b.title, b.subtitle, banner, b.banner_fit, logo, b.bg_color, b.text_color, b.draw_by_column, b.show_prizes, music, req.params.pid]
+      );
+    } else {
+      await req.app.locals.pool.query(
+        'INSERT INTO landing_config (project_id,title,subtitle,banner_url,banner_fit,logo_url,bg_color,text_color,draw_by_column,show_prizes,music_url) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)',
+        [req.params.pid, b.title, b.subtitle, banner, b.banner_fit, logo, b.bg_color, b.text_color, b.draw_by_column, b.show_prizes, music]
+      );
+    }
+    res.json({ message: 'OK' });
+  } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 module.exports = router;

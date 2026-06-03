@@ -610,13 +610,39 @@ function LandingTab({ pid, project }) {
   }, [pid]);
 
   const save = async () => {
-    const fd = new FormData();
-    Object.entries(cfg).forEach(([k, v]) => fd.append(k, v));
-    if (cfg._banner) fd.append('banner', cfg._banner);
-    if (cfg._logo) fd.append('logo', cfg._logo);
-    if (cfg._music) fd.append('music', cfg._music);
-    try { await api.saveLandingConfig(pid, fd); setMsg('Berhasil disimpan'); }
-    catch (e) { setMsg(e.message); }
+    try {
+      const data = { ...cfg };
+      // Convert files to base64
+      if (cfg._banner) {
+        data.banner_data = await new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onload = (e) => resolve(e.target.result);
+          reader.readAsDataURL(cfg._banner);
+        });
+      }
+      if (cfg._logo) {
+        data.logo_data = await new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onload = (e) => resolve(e.target.result);
+          reader.readAsDataURL(cfg._logo);
+        });
+      }
+      if (cfg._music) {
+        data.music_data = await new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onload = (e) => resolve(e.target.result);
+          reader.readAsDataURL(cfg._music);
+        });
+      }
+      delete data._banner; delete data._logo; delete data._music;
+      const res = await fetch(`https://pengundian-app-server-api.vercel.app/api/config/${pid}/landing`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+        body: JSON.stringify(data)
+      });
+      if (!res.ok) throw new Error((await res.json()).error || 'Gagal');
+      setMsg('Berhasil disimpan');
+    } catch (e) { setMsg(e.message); }
   };
 
   return (
