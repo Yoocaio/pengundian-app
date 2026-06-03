@@ -109,9 +109,9 @@ const schema = `
     project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE UNIQUE,
     title VARCHAR(255) DEFAULT 'LIVE DRAWING',
     subtitle VARCHAR(255),
-    banner_url VARCHAR(500),
+    banner_url TEXT,
     banner_fit VARCHAR(20) DEFAULT 'cover',
-    logo_url VARCHAR(500),
+    logo_url TEXT,
     bg_color VARCHAR(20) DEFAULT '#1a1a2e',
     text_color VARCHAR(20) DEFAULT '#ffffff',
     draw_by_column VARCHAR(255),
@@ -143,6 +143,11 @@ const schema = `
 
   -- Add logged_out_at to existing users table (for real-time token revocation)
   ALTER TABLE users ADD COLUMN IF NOT EXISTS logged_out_at TIMESTAMPTZ;
+
+  -- Widen banner/logo/music columns for base64 data
+  ALTER TABLE landing_config ALTER COLUMN banner_url TYPE TEXT;
+  ALTER TABLE landing_config ALTER COLUMN logo_url TYPE TEXT;
+  ALTER TABLE landing_config ALTER COLUMN music_url TYPE TEXT;
 
   -- Indexes
   CREATE INDEX IF NOT EXISTS idx_participants_project ON participants(project_id);
