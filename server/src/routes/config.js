@@ -109,7 +109,7 @@ router.post('/:pid/participants/upload', upload.single('file'), async (req, res)
   await new Promise((resolve, reject) => {
     fs.createReadStream(req.file.path).pipe(csv()).on('data', row => {
       const obj = {};
-      colNames.forEach(c => { obj[c] = row[c] || ''; });
+      colNames.forEach(c => { const val = row[c]; obj[c] = (val !== undefined && val !== null) ? String(val) : ''; });
       results.push(obj);
     }).on('end', resolve).on('error', reject);
   });
