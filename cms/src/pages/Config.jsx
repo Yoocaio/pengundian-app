@@ -51,29 +51,34 @@ export default function Config() {
 function ColumnsTab({ pid }) {
   const [cols, setCols] = useState([]);
   const [msg, setMsg] = useState('');
+  const [colLoading, setColLoading] = useState(false);
   useEffect(() => { api.getColumns(pid).then(setCols); }, [pid]);
 
   const add = async () => {
     if (cols.length >= 10) return setMsg('Maksimum 10 kolom');
+    setColLoading(true);
     try {
-      const data = await api.getParticipants(pid, 1, 1);
-      const logicData = await api.getLogics(pid);
-      if (data.total > 0 || logicData.length > 0) {
+      const [p, l] = await Promise.all([api.getParticipants(pid, 1, 1), api.getLogics(pid)]);
+      if (p.total > 0 || l.length > 0) {
+        setColLoading(false);
         return setMsg('Hapus data peserta dan logic terlebih dahulu sebelum menambah kolom.');
       }
-    } catch (e) { /* proceed if can't check */ }
+    } catch (e) { /* proceed */ }
     setCols([...cols, { id: Date.now(), name: '', show_on_web: false, masking_6digit: false, _new: true }]);
+    setColLoading(false);
   };
   const remove = async (c) => {
     if (!c._new) {
+      setColLoading(true);
       try {
-        const data = await api.getParticipants(pid, 1, 1);
-        const logicData = await api.getLogics(pid);
-        if (data.total > 0 || logicData.length > 0) {
+        const [p, l] = await Promise.all([api.getParticipants(pid, 1, 1), api.getLogics(pid)]);
+        if (p.total > 0 || l.length > 0) {
+          setColLoading(false);
           return setMsg('Hapus data peserta dan logic terlebih dahulu sebelum menghapus kolom.');
         }
         await api.deleteColumn(pid, c.id);
-      } catch (e) { return setMsg(e.message); }
+      } catch (e) { setColLoading(false); return setMsg(e.message); }
+      setColLoading(false);
     }
     setCols(cols.filter(x => x.id !== c.id));
   };
@@ -91,7 +96,7 @@ function ColumnsTab({ pid }) {
     <div>
       <div className="flex-between mb-16">
         <p className="text-muted">Definisikan kolom data peserta (maks 10).</p>
-        <button className="btn btn-primary btn-sm" onClick={add}>+ Kolom</button>
+        <button className="btn btn-primary btn-sm" onClick={add} disabled={colLoading}>{colLoading ? <span className="spinner" /> : '+ Kolom'}</button>
       </div>
       {msg && <div className={`alert ${msg.includes('Berhasil') ? 'alert-success' : 'alert-error'}`}>{msg}</div>}
       <div className="card">
@@ -257,7 +262,7 @@ function ParticipantsTab({ pid }) {
 
   const downloadTemplate = () => {
     const token = localStorage.getItem('token');
-    window.open(`/api/config/${pid}/participants/template?token=${encodeURIComponent(token)}`, '_blank');
+    window.open(`https://pengundian-app-server-api.vercel.app/api/config/${pid}/participants/template?token=${encodeURIComponent(token)}`, '_blank');
   };
 
   const handleUpload = async () => {
